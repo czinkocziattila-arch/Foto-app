@@ -1,9 +1,0 @@
-{
-  "name": "Felületfotó app",
-  "short_name": "Felületfotó",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#111827",
-  "lang": "hu"
-}
