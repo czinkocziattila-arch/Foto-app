@@ -7,20 +7,22 @@
   <meta name="theme-color" content="#111827" />
   <link rel="manifest" href="./manifest.json" />
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     :root{--bg:#f8fafc;--card:#ffffff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#111827;--ok:#16a34a;--greenbg:#ecfdf5;--blue:#2563eb;--amber:#f59e0b;--red:#dc2626}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);overscroll-behavior-y:none}
     .wrap{max-width:1200px;margin:0 auto;padding:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:12px}
-    h1,h2,h3{margin:0 0 8px 0}.muted{color:var(--muted);font-size:14px;line-height:1.45}.topgrid,.main{display:grid;grid-template-columns:1fr;gap:12px}
+    h1,h2,h3{margin:0 0 8px 0}.muted{color:var(--muted);font-size:14px;line-height:1.45}.topgrid{display:grid;grid-template-columns:1fr;gap:12px}
     .search,.input,.select{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:14px;font-size:15px;background:#fff}
     .btn{border:none;border-radius:14px;padding:12px 14px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px}.btn-primary{background:var(--accent);color:#fff}.btn-secondary{background:#fff;color:var(--text);border:1px solid var(--line)}.btn-ok{background:var(--ok);color:#fff}.btn-blue{background:var(--blue);color:#fff}.btn-amber{background:var(--amber);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-full{width:100%}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
     .row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 180px}.pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);margin-right:6px;margin-top:6px;background:#fff}.pill-green{background:var(--greenbg);color:var(--ok);border-color:#bbf7d0;font-weight:700}
     .list{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow:auto}.item{width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px;cursor:pointer}.item.active{border-color:#111827;box-shadow:0 1px 4px rgba(0,0,0,.05)}.item.done{background:var(--greenbg)}
     .topline{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.code{font-size:15px;font-weight:700;word-break:break-word}.address{font-size:13px;color:var(--muted);margin-top:6px}
-    .stats{display:grid;grid-template-columns:1fr;gap:10px;margin:12px 0}.stat{border:1px solid var(--line);border-radius:16px;padding:12px;background:#fff}.stat .label{font-size:13px;color:var(--muted)}.stat .value{font-size:24px;font-weight:800;margin-top:4px}
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.stat{border:1px solid var(--line);border-radius:16px;padding:12px;background:#fff}.stat .label{font-size:13px;color:var(--muted)}.stat .value{font-size:24px;font-weight:800;margin-top:4px}
     .photo-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.photo{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}.photo img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#f1f5f9}.photo .meta{padding:10px;font-size:12px;word-break:break-word}
     .notice{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;font-size:14px;line-height:1.45;margin-top:10px}.warnbox{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:16px;padding:12px;font-size:14px;line-height:1.45}.small{font-size:12px;color:var(--muted)}.hidden{display:none !important}.divider{height:1px;background:var(--line);margin:12px 0}.install{position:sticky;top:0;z-index:5}
-    @media (min-width:900px){.topgrid{grid-template-columns:1.1fr .9fr}.main{grid-template-columns:420px 1fr}.stats{grid-template-columns:repeat(4,1fr)}}
+    @media (min-width:900px){.topgrid{grid-template-columns:1.1fr .9fr}.stats{grid-template-columns:repeat(4,1fr)}}
   </style>
 </head>
 <body>
@@ -35,7 +37,6 @@
   <div id="mainMenuPage">
     <div class="card">
       <h1>Felületfotó app</h1>
-      <div class="muted">Külön <b>főmenü</b> és külön <b>aktív ciklus oldal</b>. Induláskor nincs minta ciklus, a használó maga hoz létre újat névvel.</div>
       <div id="iosHint" class="small" style="margin-top:8px;"></div>
     </div>
 
@@ -43,22 +44,25 @@
       <div class="card">
         <h3>1. Aktív lista / ciklus</h3>
         <div class="row">
-          <div><div class="small" style="margin-bottom:6px;">Aktív ciklus</div><select id="cycleSelect" class="select"></select></div>
+          <div><div class="small" style="margin-bottom:6px;">Kiválasztott ciklus</div><select id="cycleSelect" class="select"></select></div>
           <div><div class="small" style="margin-bottom:6px;">Új ciklus neve</div><input id="newCycleName" class="input" placeholder="pl. Kaposvár UV - 2026 tavasz 1" /></div>
         </div>
         <div class="row" style="margin-top:10px;">
           <button id="createCycleBtn" class="btn btn-primary">Új ciklus létrehozása</button>
-          <button id="openCycleBtn" class="btn btn-blue">Aktív ciklus megnyitása</button>
+          <button id="openCycleBtn" class="btn btn-blue">Kiválasztott megnyitása</button>
         </div>
         <div id="cycleInfo" class="small" style="margin-top:10px;"></div>
+        
+        <button id="deleteCycleBtn" class="btn btn-red btn-full hidden" style="margin-top:12px;">Ciklus és fotók végleges törlése</button>
+        <div id="deleteHint" class="small notice hidden"></div>
       </div>
 
       <div class="card">
-        <h3>2. Lista import</h3>
+        <h3>2. Lista import (Aktív ciklushoz)</h3>
         <div class="muted">Beolvasható <b>.xlsx</b> vagy <b>.csv</b>. Elvárt oszlopok: <b>Felületkód</b> és <b>Felületcím</b>.</div>
         <div class="row" style="margin-top:10px;">
           <button id="importBtn" class="btn btn-blue">XLSX / CSV betöltése</button>
-          <button id="clearCycleBtn" class="btn btn-red">Aktív lista ürítése</button>
+          <button id="clearCycleBtn" class="btn btn-secondary">Lista ürítése</button>
         </div>
         <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
         <div id="importInfo" class="small" style="margin-top:10px;"></div>
@@ -67,27 +71,36 @@
 
     <div class="card">
       <h3>3. Lezárás</h3>
-      <div class="warnbox">Ezt csak akkor használd, ha a ciklus teljesen elkészült. A lezárt ciklus már csak megtekinthető.</div>
-      <div class="row" style="margin-top:10px;"><button id="archiveCycleBtn" class="btn btn-amber">Aktív ciklus lezárása</button></div>
+      <div class="warnbox">Ezt csak akkor használd, ha a ciklus teljesen elkészült. A lezárt ciklus már csak megtekinthető (de onnantól exportálható és törölhető).</div>
+      <div class="row" style="margin-top:10px;"><button id="archiveCycleBtn" class="btn btn-amber">Kiválasztott ciklus lezárása</button></div>
     </div>
   </div>
 
   <div id="cyclePage" class="hidden">
+    
     <div class="card">
       <div class="row"><button id="backToMenuBtn" class="btn btn-secondary">← Vissza a főmenübe</button></div>
-      <div style="margin-top:10px;"><h2 id="cyclePageTitle">Aktív ciklus</h2><div id="cyclePageInfo" class="small"></div></div>
+      <div style="margin-top:10px;">
+        <h2 id="cyclePageTitle">Aktív ciklus</h2>
+        <div id="cyclePageInfo" class="small"></div>
+      </div>
     </div>
 
-    <div class="main">
+    <div id="listView">
       <div class="card">
-        <h3>Tételek</h3>
+        <button id="exportZipBtn" class="btn btn-blue btn-full" style="margin-bottom: 12px;">Teljes ciklus exportálása (ZIP)</button>
+        <div class="small muted" style="margin-bottom: 12px;">A fotók exportálása után a főmenüben lezárhatod, majd véglegesen törölheted a ciklust a tárhely felszabadításához.</div>
+        
         <input id="search" class="search" placeholder="Keresés felületkódra vagy címre" />
-        <div style="margin-top:10px;"><span class="pill">részleges keresés is jó</span><span class="pill">pl. 1170 vagy IFJÚSÁG</span></div>
         <div id="listStats" class="small" style="margin:10px 0;"></div>
         <div id="list" class="list"></div>
       </div>
+    </div>
 
+    <div id="detailView" class="hidden">
       <div class="card">
+        <button id="backToListBtn" class="btn btn-secondary btn-full" style="margin-bottom: 12px;">← Vissza a megállók listájához</button>
+        
         <div class="topline">
           <div><div id="detailCode" class="code"></div><div id="detailAddress" class="address"></div></div>
           <button id="doneBtn" class="btn btn-secondary">Készre jelölés</button>
@@ -96,25 +109,20 @@
         <div class="stats">
           <div class="stat"><div class="label">Fotók száma</div><div id="photoCount" class="value">0</div></div>
           <div class="stat"><div class="label">Következő fájlnév</div><div id="nextFilename" style="margin-top:8px;font-weight:700;word-break:break-word;"></div></div>
-          <div class="stat"><div class="label">Állapot</div><div id="doneState" style="margin-top:8px;font-size:18px;font-weight:700;">Folyamatban</div></div>
-          <div class="stat"><div class="label">Ciklus</div><div id="cycleLabel" style="margin-top:8px;font-size:14px;font-weight:700;word-break:break-word;"></div></div>
         </div>
 
-        <div class="row">
-          <button id="cameraBtn" class="btn btn-primary btn-full">Fotó készítése / kiválasztása</button>
-          <button id="shareCurrentBtn" class="btn btn-blue btn-full">Ennek a felületnek a fotói → Drive</button>
-          <button id="shareTodayBtn" class="btn btn-secondary btn-full">Mai fotók → Drive</button>
-        </div>
-
+        <button id="cameraBtn" class="btn btn-primary btn-full" style="margin-top:12px;">📸 Fotó készítése / kiválasztása</button>
         <input id="cameraInput" class="hidden" type="file" accept="image/*" capture="environment" />
-        <div class="notice">A fotó automatikusan a kiválasztott felületkód alapján neveződik el, például: <b>CSO-7400-1170-99_01.jpg</b>.</div>
-        <div id="shareHint" class="small" style="margin-top:8px;"></div>
+        
+        <div class="notice">A kép mentéskor automatikusan kisebb méretűre (tömörítettre) lesz alakítva, és felveszi a felületkód nevét.</div>
+        
         <div class="divider"></div>
         <div style="font-weight:700;">Elkészült fotók</div>
         <div id="photos" class="photo-list"></div>
         <div id="emptyPhotos" class="small" style="margin-top:10px;">Még nincs fotó ennél a felületnél.</div>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -129,52 +137,339 @@ let deferredPrompt = null;
 
 const els = {
   installBox: document.getElementById("installBox"), installBtn: document.getElementById("installBtn"), iosHint: document.getElementById("iosHint"),
-  mainMenuPage: document.getElementById("mainMenuPage"), cyclePage: document.getElementById("cyclePage"), cycleSelect: document.getElementById("cycleSelect"), newCycleName: document.getElementById("newCycleName"), createCycleBtn: document.getElementById("createCycleBtn"), archiveCycleBtn: document.getElementById("archiveCycleBtn"), openCycleBtn: document.getElementById("openCycleBtn"), cycleInfo: document.getElementById("cycleInfo"), importBtn: document.getElementById("importBtn"), clearCycleBtn: document.getElementById("clearCycleBtn"), fileInput: document.getElementById("fileInput"), importInfo: document.getElementById("importInfo"), backToMenuBtn: document.getElementById("backToMenuBtn"), cyclePageTitle: document.getElementById("cyclePageTitle"), cyclePageInfo: document.getElementById("cyclePageInfo"), search: document.getElementById("search"), listStats: document.getElementById("listStats"), list: document.getElementById("list"), detailCode: document.getElementById("detailCode"), detailAddress: document.getElementById("detailAddress"), photoCount: document.getElementById("photoCount"), nextFilename: document.getElementById("nextFilename"), doneState: document.getElementById("doneState"), cycleLabel: document.getElementById("cycleLabel"), doneBtn: document.getElementById("doneBtn"), cameraBtn: document.getElementById("cameraBtn"), cameraInput: document.getElementById("cameraInput"), shareCurrentBtn: document.getElementById("shareCurrentBtn"), shareTodayBtn: document.getElementById("shareTodayBtn"), shareHint: document.getElementById("shareHint"), photos: document.getElementById("photos"), emptyPhotos: document.getElementById("emptyPhotos")
+  mainMenuPage: document.getElementById("mainMenuPage"), cyclePage: document.getElementById("cyclePage"), 
+  listView: document.getElementById("listView"), detailView: document.getElementById("detailView"),
+  cycleSelect: document.getElementById("cycleSelect"), newCycleName: document.getElementById("newCycleName"), 
+  createCycleBtn: document.getElementById("createCycleBtn"), archiveCycleBtn: document.getElementById("archiveCycleBtn"), 
+  openCycleBtn: document.getElementById("openCycleBtn"), cycleInfo: document.getElementById("cycleInfo"), 
+  deleteCycleBtn: document.getElementById("deleteCycleBtn"), deleteHint: document.getElementById("deleteHint"),
+  importBtn: document.getElementById("importBtn"), clearCycleBtn: document.getElementById("clearCycleBtn"), 
+  fileInput: document.getElementById("fileInput"), importInfo: document.getElementById("importInfo"), 
+  backToMenuBtn: document.getElementById("backToMenuBtn"), backToListBtn: document.getElementById("backToListBtn"),
+  cyclePageTitle: document.getElementById("cyclePageTitle"), cyclePageInfo: document.getElementById("cyclePageInfo"), 
+  search: document.getElementById("search"), listStats: document.getElementById("listStats"), list: document.getElementById("list"), 
+  exportZipBtn: document.getElementById("exportZipBtn"),
+  detailCode: document.getElementById("detailCode"), detailAddress: document.getElementById("detailAddress"), 
+  photoCount: document.getElementById("photoCount"), nextFilename: document.getElementById("nextFilename"), 
+  doneBtn: document.getElementById("doneBtn"), cameraBtn: document.getElementById("cameraBtn"), cameraInput: document.getElementById("cameraInput"), 
+  photos: document.getElementById("photos"), emptyPhotos: document.getElementById("emptyPhotos")
 };
 
 function readState(){ try{ const raw = localStorage.getItem(APP_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; } }
 function saveState(){ localStorage.setItem(APP_KEY, JSON.stringify(state)); }
 function getActiveCycle(){ return state.cycles.find(c => c.id === state.activeCycleId) || null; }
-function getSelectedItem(){ const cycle = getActiveCycle(); if (!cycle || !cycle.items.length) return null; return cycle.items.find(x => x.code === selectedCode) || cycle.items[0]; }
+function getSelectedItem(){ const cycle = getActiveCycle(); if (!cycle || !cycle.items.length) return null; return cycle.items.find(x => x.code === selectedCode) || null; }
 function getRecord(cycle, code){ if (!cycle.records[code]) cycle.records[code] = { done:false, photos:[] }; return cycle.records[code]; }
 function normalizeName(name){ return name.replace(/[\\/:*?"<>|]/g, "-"); }
-function showPage(name){ els.mainMenuPage.classList.toggle("hidden", name !== "menu"); els.cyclePage.classList.toggle("hidden", name !== "cycle"); }
+
+// UI navigáció
+function showPage(name){ 
+  els.mainMenuPage.classList.toggle("hidden", name !== "menu"); 
+  els.cyclePage.classList.toggle("hidden", name !== "cycle"); 
+}
+function showListView() {
+  els.listView.classList.remove("hidden");
+  els.detailView.classList.add("hidden");
+  els.backToMenuBtn.classList.remove("hidden"); // Újra mutatjuk a főmenü gombot
+  selectedCode = null;
+  renderList();
+}
+function showDetailView(code) {
+  selectedCode = code;
+  els.listView.classList.add("hidden");
+  els.detailView.classList.remove("hidden");
+  els.backToMenuBtn.classList.add("hidden"); // Elrejtjük a főmenü gombot a fotózásnál
+  renderDetail();
+}
+
+// Adatbázis (IndexedDB)
 function openDb(){ return new Promise((resolve,reject)=>{ const req = indexedDB.open(DB_NAME,1); req.onupgradeneeded = (e)=>{ const db = e.target.result; if(!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME,{keyPath:"id"}); }; req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error); }); }
 async function putPhotoRecord(record){ const db = await openDb(); return new Promise((resolve,reject)=>{ const tx = db.transaction(STORE_NAME,"readwrite"); tx.objectStore(STORE_NAME).put(record); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error); }); }
 async function getPhotoRecord(id){ const db = await openDb(); return new Promise((resolve,reject)=>{ const tx = db.transaction(STORE_NAME,"readonly"); const req = tx.objectStore(STORE_NAME).get(id); req.onsuccess=()=>resolve(req.result || null); req.onerror=()=>reject(req.error); }); }
 async function deletePhotoRecord(id){ const db = await openDb(); return new Promise((resolve,reject)=>{ const tx = db.transaction(STORE_NAME,"readwrite"); tx.objectStore(STORE_NAME).delete(id); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error); }); }
+async function deleteAllPhotosForCycle(cycleId) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.openCursor();
+    req.onsuccess = (e) => {
+      const cursor = e.target.result;
+      if (cursor) {
+        if (cursor.value.cycleId === cycleId) cursor.delete();
+        cursor.continue();
+      } else {
+        resolve(true);
+      }
+    };
+    req.onerror = () => reject(tx.error);
+  });
+}
+
 function downloadBlob(blob, filename){ const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
-function sameDay(iso){ const d=new Date(iso), n=new Date(); return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate(); }
+
+// Képtömörítő funkció (Canvas API)
+async function compressImage(file, maxWidth = 1600, quality = 0.8) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function filteredItems(){ const cycle=getActiveCycle(); if(!cycle) return []; const q=els.search.value.trim().toLowerCase(); if(!q) return cycle.items; return cycle.items.filter(x => (x.code||"").toLowerCase().includes(q) || (x.address||"").toLowerCase().includes(q)); }
-function renderMenu(){ els.cycleSelect.innerHTML=""; if(!state.cycles.length){ const opt=document.createElement("option"); opt.value=""; opt.textContent="Nincs még ciklus"; els.cycleSelect.appendChild(opt); els.openCycleBtn.disabled=true; els.archiveCycleBtn.disabled=true; els.importBtn.disabled=true; els.clearCycleBtn.disabled=true; els.cycleInfo.textContent="Még nincs létrehozott ciklus."; return; } state.cycles.forEach(cycle=>{ const opt=document.createElement("option"); opt.value=cycle.id; opt.textContent=cycle.name + (cycle.status==="archived"?" (lezárt)":""); els.cycleSelect.appendChild(opt); }); els.cycleSelect.value=state.activeCycleId || ""; els.openCycleBtn.disabled=false; els.archiveCycleBtn.disabled=false; els.importBtn.disabled=false; els.clearCycleBtn.disabled=false; const cycle=getActiveCycle(); if(cycle){ const total=cycle.items.length; const done=cycle.items.filter(i => getRecord(cycle,i.code).done).length; els.cycleInfo.textContent="Tételek: "+total+" • Kész: "+done+" • Állapot: "+(cycle.status==="archived"?"Lezárt":"Aktív"); } else { els.cycleInfo.textContent="Nincs aktív ciklus."; } }
-function renderList(){ const cycle=getActiveCycle(), items=filteredItems(); els.list.innerHTML=""; if(!cycle){ els.list.innerHTML='<div class="small">Nincs ciklus.</div>'; return; } if(!selectedCode && cycle.items.length) selectedCode=cycle.items[0].code; const doneCount=cycle.items.filter(i => getRecord(cycle,i.code).done).length; els.listStats.textContent="Összes tétel: "+cycle.items.length+" • Kész: "+doneCount+" • Találat: "+items.length; els.cyclePageTitle.textContent=cycle.name; els.cyclePageInfo.textContent="Állapot: "+(cycle.status==="archived"?"Lezárt":"Aktív"); items.forEach(item=>{ const rec=getRecord(cycle,item.code); const btn=document.createElement("button"); btn.className="item"+(item.code===selectedCode?" active":"")+(rec.done?" done":""); btn.innerHTML=`<div class="topline"><div style="min-width:0;"><div class="code">${item.code}</div><div class="address">${item.address || "—"}</div></div><div style="text-align:right;"><div class="pill ${rec.done ? "pill-green" : ""}">${rec.done ? "Kész" : "Nincs kész"}</div><div class="pill">${(rec.photos||[]).length} fotó</div></div></div>`; btn.onclick=()=>{ selectedCode=item.code; renderCyclePage(); }; els.list.appendChild(btn); }); if(!items.length) els.list.innerHTML='<div class="small">Nincs találat.</div>'; }
-async function renderDetail(){ const cycle=getActiveCycle(), item=getSelectedItem(); if(!cycle || !item){ els.detailCode.textContent=""; els.detailAddress.textContent="Nincs kijelölt tétel."; els.photoCount.textContent="0"; els.nextFilename.textContent=""; els.doneState.textContent="—"; els.cycleLabel.textContent=cycle ? cycle.name : "—"; els.photos.innerHTML=""; return; } const rec=getRecord(cycle,item.code); els.detailCode.textContent=item.code; els.detailAddress.textContent=item.address || "Nincs cím"; els.photoCount.textContent=String((rec.photos||[]).length); els.nextFilename.textContent=item.code+"_"+String((rec.photos||[]).length+1).padStart(2, "0")+".jpg"; els.doneState.textContent=rec.done?"Kész":"Folyamatban"; els.cycleLabel.textContent=cycle.name; els.doneBtn.textContent=rec.done?"Kész":"Készre jelölés"; els.doneBtn.className="btn "+(rec.done?"btn-ok":"btn-secondary"); els.doneBtn.disabled=cycle.status==="archived"; els.photos.innerHTML=""; els.emptyPhotos.style.display=(rec.photos||[]).length ? "none":"block"; for(let idx=0; idx<rec.photos.length; idx++){ const photo=rec.photos[idx]; const record=await getPhotoRecord(photo.id); const div=document.createElement("div"); div.className="photo"; let imgSrc=""; if(record && record.blob) imgSrc=URL.createObjectURL(record.blob); div.innerHTML=`<img src="${imgSrc}" alt="${photo.filename}"><div class="meta"><div><b>${photo.filename}</b></div><div style="margin-top:6px;">${new Date(photo.createdAt).toLocaleString("hu-HU")}</div><button class="btn btn-secondary btn-full" style="margin-top:8px;padding:10px 12px;font-size:13px;">Törlés</button></div>`; div.querySelector("button").onclick=async ()=>{ const removed=rec.photos[idx]; rec.photos.splice(idx,1); saveState(); if(removed && removed.id) await deletePhotoRecord(removed.id); renderCyclePage(); }; els.photos.appendChild(div); } }
-function renderMainMenu(){ renderMenu(); }
-async function renderCyclePage(){ renderList(); await renderDetail(); }
-function createCycle(name){ const trimmed=name.trim(); if(!trimmed) return; const cycle={ id:crypto.randomUUID(), name:trimmed, status:"active", createdAt:new Date().toISOString(), items:[], records:{} }; state.cycles.unshift(cycle); state.activeCycleId=cycle.id; selectedCode=null; saveState(); renderMainMenu(); }
-function archiveActiveCycle(){ const cycle=getActiveCycle(); if(!cycle) return; cycle.status="archived"; saveState(); renderMainMenu(); }
-function clearActiveCycle(){ const cycle=getActiveCycle(); if(!cycle) return; cycle.items=[]; cycle.records={}; selectedCode=null; saveState(); renderMainMenu(); }
+
+function renderMenu(){ 
+  els.cycleSelect.innerHTML=""; 
+  els.deleteCycleBtn.classList.add("hidden");
+  els.deleteHint.classList.add("hidden");
+
+  if(!state.cycles.length){ 
+    const opt=document.createElement("option"); opt.value=""; opt.textContent="Nincs még ciklus"; els.cycleSelect.appendChild(opt); 
+    els.openCycleBtn.disabled=true; els.archiveCycleBtn.disabled=true; els.importBtn.disabled=true; els.clearCycleBtn.disabled=true; 
+    els.cycleInfo.textContent="Még nincs létrehozott ciklus."; return; 
+  } 
+  
+  state.cycles.forEach(cycle=>{ 
+    const opt=document.createElement("option"); opt.value=cycle.id; opt.textContent=cycle.name + (cycle.status==="archived"?" (lezárt)":""); els.cycleSelect.appendChild(opt); 
+  }); 
+  els.cycleSelect.value=state.activeCycleId || state.cycles[0].id; 
+  state.activeCycleId = els.cycleSelect.value;
+  
+  els.openCycleBtn.disabled=false; els.archiveCycleBtn.disabled=false; els.importBtn.disabled=false; els.clearCycleBtn.disabled=false; 
+  
+  const cycle=getActiveCycle(); 
+  if(cycle){ 
+    const total=cycle.items.length; const done=cycle.items.filter(i => getRecord(cycle,i.code).done).length; 
+    els.cycleInfo.textContent="Tételek: "+total+" • Kész: "+done+" • Állapot: "+(cycle.status==="archived"?"Lezárt":"Aktív"); 
+    
+    // Törlés gomb logikája
+    if(cycle.status === "archived") {
+      els.deleteCycleBtn.classList.remove("hidden");
+      els.deleteHint.classList.remove("hidden");
+      if(cycle.exportStatus === "sikeres") {
+        els.deleteCycleBtn.disabled = false;
+        els.deleteHint.textContent = "A ciklust már exportáltad ZIP-be. Biztonságosan törölhető a tárhelyről.";
+      } else {
+        els.deleteCycleBtn.disabled = true;
+        els.deleteHint.textContent = "A végleges törlés gomb csak azután lesz aktív, ha a ciklus képeit exportáltad (ZIP) a ciklus nézeten belül.";
+      }
+    }
+  } 
+}
+
+function renderList(){ 
+  const cycle=getActiveCycle(), items=filteredItems(); 
+  els.list.innerHTML=""; 
+  if(!cycle){ els.list.innerHTML='<div class="small">Nincs ciklus.</div>'; return; } 
+  
+  const doneCount=cycle.items.filter(i => getRecord(cycle,i.code).done).length; 
+  els.listStats.textContent="Összes tétel: "+cycle.items.length+" • Kész: "+doneCount+" • Találat: "+items.length; 
+  els.cyclePageTitle.textContent=cycle.name; 
+  els.cyclePageInfo.textContent="Állapot: "+(cycle.status==="archived"?"Lezárt":"Aktív"); 
+  
+  items.forEach(item=>{ 
+    const rec=getRecord(cycle,item.code); 
+    const btn=document.createElement("button"); 
+    btn.className="item" + (rec.done?" done":""); 
+    btn.innerHTML=`<div class="topline"><div style="min-width:0;"><div class="code">${item.code}</div><div class="address">${item.address || "—"}</div></div><div style="text-align:right;"><div class="pill ${rec.done ? "pill-green" : ""}">${rec.done ? "Kész" : "Nincs kész"}</div><div class="pill">${(rec.photos||[]).length} fotó</div></div></div>`; 
+    btn.onclick=()=>showDetailView(item.code); 
+    els.list.appendChild(btn); 
+  }); 
+  if(!items.length) els.list.innerHTML='<div class="small">Nincs találat.</div>'; 
+}
+
+async function renderDetail(){ 
+  const cycle=getActiveCycle(), item=getSelectedItem(); 
+  if(!cycle || !item){ return; } 
+  const rec=getRecord(cycle,item.code); 
+  
+  els.detailCode.textContent=item.code; 
+  els.detailAddress.textContent=item.address || "Nincs cím"; 
+  els.photoCount.textContent=String((rec.photos||[]).length); 
+  els.nextFilename.textContent=item.code+"_"+String((rec.photos||[]).length+1).padStart(2, "0")+".jpg"; 
+  
+  els.doneBtn.textContent=rec.done?"Kész":"Készre jelölés"; 
+  els.doneBtn.className="btn "+(rec.done?"btn-ok":"btn-secondary"); 
+  els.doneBtn.disabled=cycle.status==="archived"; 
+  els.cameraBtn.disabled=cycle.status==="archived";
+  
+  els.photos.innerHTML=""; els.emptyPhotos.style.display=(rec.photos||[]).length ? "none":"block"; 
+  for(let idx=0; idx<rec.photos.length; idx++){ 
+    const photo=rec.photos[idx]; const record=await getPhotoRecord(photo.id); const div=document.createElement("div"); div.className="photo"; 
+    let imgSrc=""; if(record && record.blob) imgSrc=URL.createObjectURL(record.blob); 
+    div.innerHTML=`<img src="${imgSrc}" alt="${photo.filename}"><div class="meta"><div><b>${photo.filename}</b></div><div style="margin-top:6px;">${new Date(photo.createdAt).toLocaleString("hu-HU")}</div><button class="btn btn-secondary btn-full" style="margin-top:8px;padding:10px 12px;font-size:13px;" ${cycle.status==="archived"?"disabled":""}>Törlés</button></div>`; 
+    div.querySelector("button").onclick=async ()=>{ 
+      if(cycle.status==="archived") return;
+      if(!confirm("Biztosan törlöd ezt a fotót?")) return;
+      const removed=rec.photos[idx]; rec.photos.splice(idx,1); saveState(); 
+      if(removed && removed.id) await deletePhotoRecord(removed.id); 
+      renderDetail(); 
+    }; 
+    els.photos.appendChild(div); 
+  } 
+}
+
+function createCycle(name){ const trimmed=name.trim(); if(!trimmed) return; const cycle={ id:crypto.randomUUID(), name:trimmed, status:"active", exportStatus:"none", createdAt:new Date().toISOString(), items:[], records:{} }; state.cycles.unshift(cycle); state.activeCycleId=cycle.id; saveState(); renderMenu(); }
+function archiveActiveCycle(){ const cycle=getActiveCycle(); if(!cycle) return; cycle.status="archived"; saveState(); renderMenu(); }
+function clearActiveCycle(){ const cycle=getActiveCycle(); if(!cycle) return; cycle.items=[]; cycle.records={}; selectedCode=null; saveState(); renderMenu(); }
+
 function parseRowsToItems(rows){ if(!rows.length) return []; const headers=rows[0].map(h => String(h || "").trim().toLowerCase()); const codeIdx=headers.findIndex(h => ["felületkód","feluletkód","feluletkod","felületkod","code"].includes(h)); const addressIdx=headers.findIndex(h => ["felületcím","feluletcím","feluletcim","felületcim","address","cím","cim"].includes(h)); if(codeIdx===-1) throw new Error("Nem találtam 'Felületkód' vagy 'code' oszlopot."); return rows.slice(1).map(r => ({ code:String(r[codeIdx] ?? "").trim(), address:addressIdx>=0 ? String(r[addressIdx] ?? "").trim() : "" })).filter(x => x.code); }
-async function importFile(file){ let items=[]; if(file.name.toLowerCase().endsWith(".csv")){ const text=await file.text(); const rows=text.split(/\r?\n/).filter(Boolean).map(line => line.split(",")); items=parseRowsToItems(rows); } else { if(typeof XLSX==="undefined") throw new Error("Az XLSX beolvasó nem töltődött be. Első induláskor kell internet."); const data=await file.arrayBuffer(); const wb=XLSX.read(data); const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false}); items=parseRowsToItems(rows); } const cycle=getActiveCycle(); if(!cycle) throw new Error("Nincs aktív ciklus."); cycle.items=items; cycle.records={}; selectedCode=items.length ? items[0].code : null; saveState(); els.importInfo.textContent="Betöltve: "+items.length+" tétel a(z) '"+cycle.name+"' ciklusba."; renderMainMenu(); }
-async function sharePhotos(photoMetas, titleText){ if(!photoMetas.length){ els.shareHint.textContent="Nincs megosztható fotó."; return; } if(!navigator.share){ els.shareHint.textContent="Ezen a telefonon a natív megosztás nem elérhető ebben a nézetben."; return; } try{ const files=[]; for(const p of photoMetas){ const rec=await getPhotoRecord(p.id); if(rec && rec.blob) files.push(new File([rec.blob], p.filename, {type: rec.blob.type || "image/jpeg"})); } if(!files.length){ els.shareHint.textContent="Nem találtam megosztható fotófájlt."; return; } if(navigator.canShare && !navigator.canShare({files})){ els.shareHint.textContent="A telefon nem tud ennyi fájlt egyszerre megosztani. Próbáld kisebb adagban."; return; } await navigator.share({files, title:titleText, text:titleText}); els.shareHint.textContent="Megosztási ablak megnyitva. Itt kiválaszthatod a Drive-ot."; }catch(e){ els.shareHint.textContent="A megosztás megszakadt vagy a telefon nem támogatja így."; } }
+async function importFile(file){ 
+  let items=[]; 
+  if(file.name.toLowerCase().endsWith(".csv")){ 
+    const text=await file.text(); const rows=text.split(/\r?\n/).filter(Boolean).map(line => line.split(",")); items=parseRowsToItems(rows); 
+  } else { 
+    if(typeof XLSX==="undefined") throw new Error("Az XLSX beolvasó nem töltődött be. Első induláskor kell internet."); 
+    const data=await file.arrayBuffer(); const wb=XLSX.read(data); const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false}); items=parseRowsToItems(rows); 
+  } 
+  const cycle=getActiveCycle(); if(!cycle) throw new Error("Nincs aktív ciklus."); 
+  cycle.items=items; cycle.records={}; selectedCode=items.length ? items[0].code : null; saveState(); 
+  els.importInfo.textContent="Betöltve: "+items.length+" tétel a(z) '"+cycle.name+"' ciklusba."; renderMenu(); 
+}
+
 window.addEventListener("beforeinstallprompt", (e)=>{ e.preventDefault(); deferredPrompt=e; els.installBox.classList.remove("hidden"); });
 els.installBtn.onclick = async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; els.installBox.classList.add("hidden"); };
 const ua = navigator.userAgent || ""; const isIOS = /iPhone|iPad|iPod/i.test(ua); const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone; if(isIOS && !isStandalone) els.iosHint.textContent="iPhone-on: Safari → Megosztás → Hozzáadás a Főképernyőhöz."; if("serviceWorker" in navigator){ navigator.serviceWorker.register("./sw.js").catch(()=>{}); }
+
+// Eseménykezelők
 els.createCycleBtn.onclick=()=>{ createCycle(els.newCycleName.value); els.newCycleName.value=""; };
-els.cycleSelect.onchange=()=>{ state.activeCycleId=els.cycleSelect.value || null; selectedCode=null; saveState(); renderMainMenu(); };
+els.cycleSelect.onchange=()=>{ state.activeCycleId=els.cycleSelect.value || null; saveState(); renderMenu(); };
 els.archiveCycleBtn.onclick=()=>{ if(confirm("Biztosan lezárod az aktív ciklust?")) archiveActiveCycle(); };
-els.openCycleBtn.onclick=async ()=>{ if(!getActiveCycle()) return; showPage("cycle"); await renderCyclePage(); };
-els.backToMenuBtn.onclick=()=>{ showPage("menu"); renderMainMenu(); };
-els.clearCycleBtn.onclick=()=>{ if(confirm("Biztosan üríted az aktív ciklus listáját?")) clearActiveCycle(); };
+els.openCycleBtn.onclick=()=>{ if(!getActiveCycle()) return; showPage("cycle"); showListView(); };
+els.backToMenuBtn.onclick=()=>{ showPage("menu"); renderMenu(); };
+els.backToListBtn.onclick=()=>{ showListView(); };
+els.clearCycleBtn.onclick=()=>{ if(confirm("Biztosan üríted az aktív ciklus listáját? (A fotók nem törlődnek, de a kapcsolat megszakad!)")) clearActiveCycle(); };
 els.importBtn.onclick=()=>els.fileInput.click();
 els.fileInput.onchange=async (e)=>{ const file=e.target.files && e.target.files[0]; if(!file) return; try{ await importFile(file); }catch(err){ els.importInfo.textContent="Import hiba: "+err.message; } e.target.value=""; };
 els.search.addEventListener("input", renderList);
-els.doneBtn.onclick=async ()=>{ const cycle=getActiveCycle(); const item=getSelectedItem(); if(!cycle || !item || cycle.status==="archived") return; const rec=getRecord(cycle,item.code); rec.done=!rec.done; saveState(); await renderCyclePage(); };
+
+els.doneBtn.onclick=async ()=>{ 
+  const cycle=getActiveCycle(); const item=getSelectedItem(); if(!cycle || !item || cycle.status==="archived") return; 
+  const rec=getRecord(cycle,item.code); rec.done=!rec.done; saveState(); await renderDetail(); 
+};
+
 els.cameraBtn.onclick=()=>els.cameraInput.click();
-els.cameraInput.onchange=async (e)=>{ const file=e.target.files && e.target.files[0]; const cycle=getActiveCycle(); const item=getSelectedItem(); if(!file || !cycle || !item || cycle.status==="archived") return; const rec=getRecord(cycle,item.code); const nextIndex=(rec.photos||[]).length+1; const ext=(file.type||"").includes("png")?"png":(((file.type||"").includes("webp"))?"webp":"jpg"); const filename=normalizeName(item.code)+"_"+String(nextIndex).padStart(2, "0")+"."+ext; const id=cycle.id+"__"+item.code+"__"+Date.now()+"__"+nextIndex; rec.photos.push({id, filename, createdAt:new Date().toISOString()}); saveState(); await putPhotoRecord({id, cycleId:cycle.id, code:item.code, filename, createdAt:new Date().toISOString(), blob:file}); await renderCyclePage(); downloadBlob(file, filename); e.target.value=""; };
-els.shareCurrentBtn.onclick=async ()=>{ const cycle=getActiveCycle(); const item=getSelectedItem(); if(!cycle || !item) return; await sharePhotos(getRecord(cycle,item.code).photos || [], cycle.name+" - "+item.code+" fotói"); };
-els.shareTodayBtn.onclick=async ()=>{ const cycle=getActiveCycle(); if(!cycle) return; let photos=[]; Object.values(cycle.records).forEach(rec=>{ (rec.photos || []).forEach(p=>{ if(sameDay(p.createdAt)) photos.push(p); }); }); await sharePhotos(photos, cycle.name+" - mai fotók"); };
-showPage("menu"); renderMainMenu();
+els.cameraInput.onchange=async (e)=>{ 
+  const file=e.target.files && e.target.files[0]; const cycle=getActiveCycle(); const item=getSelectedItem(); 
+  if(!file || !cycle || !item || cycle.status==="archived") return; 
+  
+  els.cameraBtn.textContent = "⌛ Kép feldolgozása...";
+  els.cameraBtn.disabled = true;
+
+  try {
+    // Képtömörítés (Max 1600px, 80% minőség)
+    const compressedBlob = await compressImage(file, 1600, 0.8);
+    
+    const rec=getRecord(cycle,item.code); const nextIndex=(rec.photos||[]).length+1; 
+    const filename=normalizeName(item.code)+"_"+String(nextIndex).padStart(2, "0")+".jpg"; 
+    const id=cycle.id+"__"+item.code+"__"+Date.now()+"__"+nextIndex; 
+    
+    rec.photos.push({id, filename, createdAt:new Date().toISOString()}); saveState(); 
+    await putPhotoRecord({id, cycleId:cycle.id, code:item.code, filename, createdAt:new Date().toISOString(), blob:compressedBlob}); 
+    await renderDetail(); 
+  } catch(err) {
+    alert("Hiba a kép feldolgozása közben.");
+  } finally {
+    els.cameraBtn.textContent = "📸 Fotó készítése / kiválasztása";
+    els.cameraBtn.disabled = false;
+    e.target.value=""; 
+  }
+};
+
+// ZIP Exportálás
+els.exportZipBtn.onclick = async () => {
+  const cycle = getActiveCycle();
+  if(!cycle) return;
+  
+  els.exportZipBtn.textContent = "⌛ ZIP generálása folyamatban (ez eltarthat pár másodpercig)...";
+  els.exportZipBtn.disabled = true;
+
+  try {
+    const zip = new JSZip();
+    let hasPhotos = false;
+
+    // Végigmegyünk a ciklus összes mentett fotóján
+    for (const code in cycle.records) {
+      const rec = cycle.records[code];
+      if (rec.photos && rec.photos.length > 0) {
+        for (const p of rec.photos) {
+          const photoData = await getPhotoRecord(p.id);
+          if (photoData && photoData.blob) {
+            zip.file(p.filename, photoData.blob);
+            hasPhotos = true;
+          }
+        }
+      }
+    }
+
+    if (!hasPhotos) {
+      alert("Nincs egyetlen fotó sem a ciklusban, amit exportálni lehetne.");
+      return;
+    }
+
+    const content = await zip.generateAsync({type: "blob"});
+    downloadBlob(content, `${normalizeName(cycle.name)}_export.zip`);
+    
+    // Sikeres export jelzése a rendszernek
+    cycle.exportStatus = "sikeres";
+    saveState();
+    
+    setTimeout(() => {
+      alert("A ZIP fájl letöltése megkezdődött!\n\nKérlek, ellenőrizd a letöltések/fájlok között, hogy biztosan megérkezett-e.");
+    }, 500);
+
+  } catch (err) {
+    alert("Hiba a ZIP generálása közben: " + err.message);
+  } finally {
+    els.exportZipBtn.textContent = "Teljes ciklus exportálása (ZIP)";
+    els.exportZipBtn.disabled = false;
+  }
+};
+
+// Végleges törlés (Főmenüből)
+els.deleteCycleBtn.onclick = async () => {
+  const cycle = getActiveCycle();
+  if(!cycle || cycle.status !== "archived" || cycle.exportStatus !== "sikeres") return;
+
+  const confirmed = confirm("BIZTOSAN TÖRÖLNI AKAROD EZT A CIKLUST ÉS AZ ÖSSZES FOTÓT?\n\nKérlek ellenőrizd, hogy a korábban exportált ZIP fájl biztonságban van-e a telefonon vagy a Drive-on. Ezt a folyamatot nem lehet visszavonni.");
+  if(!confirmed) return;
+
+  els.deleteCycleBtn.textContent = "Törlés folyamatban...";
+  els.deleteCycleBtn.disabled = true;
+
+  try {
+    // Képek fizikai törlése az IndexedDB-ből
+    await deleteAllPhotosForCycle(cycle.id);
+    
+    // Ciklus törlése a listából
+    state.cycles = state.cycles.filter(c => c.id !== cycle.id);
+    state.activeCycleId = state.cycles.length ? state.cycles[0].id : null;
+    saveState();
+    
+    alert("Ciklus és a hozzá tartozó fotók sikeresen törölve a telefon memóriájából.");
+  } catch(err) {
+    alert("Hiba a törlés során: " + err.message);
+  } finally {
+    els.deleteCycleBtn.textContent = "Ciklus és fotók végleges törlése";
+    renderMenu();
+  }
+};
+
+showPage("menu"); 
+renderMenu();
 </script>
 </body>
 </html>
