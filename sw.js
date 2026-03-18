@@ -1,4 +1,4 @@
-const CACHE_NAME = "feluletfoto-pwa-v1";
+const CACHE_NAME = "feluletfoto-pwa-v2";
 const URLS = ["./", "./index.html", "./manifest.json"];
 
 self.addEventListener("install", e => {
