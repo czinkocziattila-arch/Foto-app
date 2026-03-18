@@ -10,14 +10,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     :root{--bg:#f8fafc;--card:#ffffff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#111827;--ok:#16a34a;--greenbg:#ecfdf5;--blue:#2563eb;--amber:#f59e0b;--red:#dc2626}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);overscroll-behavior-y:none}
+    /* Chrome frissítés (pull-to-refresh) tiltása: overscroll-behavior: none */
+    *{box-sizing:border-box} html, body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none;}
     .wrap{max-width:1200px;margin:0 auto;padding:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:12px}
     h1,h2,h3{margin:0 0 8px 0}.muted{color:var(--muted);font-size:14px;line-height:1.45}.topgrid{display:grid;grid-template-columns:1fr;gap:12px}
     .search,.input,.select{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:14px;font-size:15px;background:#fff}
-    .btn{border:none;border-radius:14px;padding:12px 14px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px}.btn-primary{background:var(--accent);color:#fff}.btn-secondary{background:#fff;color:var(--text);border:1px solid var(--line)}.btn-ok{background:var(--ok);color:#fff}.btn-blue{background:var(--blue);color:#fff}.btn-amber{background:var(--amber);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-full{width:100%}
+    .btn{border:none;border-radius:14px;padding:12px 14px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;display:inline-block;text-align:center;}.btn-primary{background:var(--accent);color:#fff}.btn-secondary{background:#fff;color:var(--text);border:1px solid var(--line)}.btn-ok{background:var(--ok);color:#fff}.btn-blue{background:var(--blue);color:#fff}.btn-amber{background:var(--amber);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-full{width:100%}
     .btn:disabled{opacity:0.5;cursor:not-allowed}
     .row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 180px}.pill{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);margin-right:6px;margin-top:6px;background:#fff}.pill-green{background:var(--greenbg);color:var(--ok);border-color:#bbf7d0;font-weight:700}
-    .list{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow:auto}.item{width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px;cursor:pointer}.item.active{border-color:#111827;box-shadow:0 1px 4px rgba(0,0,0,.05)}.item.done{background:var(--greenbg)}
+    /* Lista elszigetelése a Chrome húzásától: overscroll-behavior: contain */
+    .list{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow:auto;overscroll-behavior:contain;padding-bottom:20px;}
+    .item{width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px;cursor:pointer}.item.active{border-color:#111827;box-shadow:0 1px 4px rgba(0,0,0,.05)}.item.done{background:var(--greenbg)}
     .topline{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.code{font-size:15px;font-weight:700;word-break:break-word}.address{font-size:13px;color:var(--muted);margin-top:6px}
     .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.stat{border:1px solid var(--line);border-radius:16px;padding:12px;background:#fff}.stat .label{font-size:13px;color:var(--muted)}.stat .value{font-size:24px;font-weight:800;margin-top:4px}
     .photo-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.photo{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}.photo img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#f1f5f9}.photo .meta{padding:10px;font-size:12px;word-break:break-word}
@@ -89,7 +92,13 @@
     <div id="listView">
       <div class="card">
         <button id="exportZipBtn" class="btn btn-blue btn-full" style="margin-bottom: 12px;">Teljes ciklus exportálása (ZIP)</button>
-        <div class="small muted" style="margin-bottom: 12px;">A fotók exportálása után a főmenüben lezárhatod, majd véglegesen törölheted a ciklust a tárhely felszabadításához.</div>
+        <div class="small muted">A fotók exportálása után a főmenüben lezárhatod, majd véglegesen törölheted a ciklust a tárhely felszabadításához.</div>
+        
+        <div class="divider"></div>
+        
+        <div style="margin-bottom: 10px;">
+          <button id="toggleDoneBtn" class="btn btn-secondary btn-full">✅ Készek elrejtése</button>
+        </div>
         
         <input id="search" class="search" placeholder="Keresés felületkódra vagy címre" />
         <div id="listStats" class="small" style="margin:10px 0;"></div>
@@ -134,6 +143,7 @@ const initialState = { cycles: [], activeCycleId: null };
 let state = readState() || initialState;
 let selectedCode = null;
 let deferredPrompt = null;
+let hideDoneItems = false; // Új változó a szűrőnek
 
 const els = {
   installBox: document.getElementById("installBox"), installBtn: document.getElementById("installBtn"), iosHint: document.getElementById("iosHint"),
@@ -147,6 +157,7 @@ const els = {
   fileInput: document.getElementById("fileInput"), importInfo: document.getElementById("importInfo"), 
   backToMenuBtn: document.getElementById("backToMenuBtn"), backToListBtn: document.getElementById("backToListBtn"),
   cyclePageTitle: document.getElementById("cyclePageTitle"), cyclePageInfo: document.getElementById("cyclePageInfo"), 
+  toggleDoneBtn: document.getElementById("toggleDoneBtn"), // Új gomb
   search: document.getElementById("search"), listStats: document.getElementById("listStats"), list: document.getElementById("list"), 
   exportZipBtn: document.getElementById("exportZipBtn"),
   detailCode: document.getElementById("detailCode"), detailAddress: document.getElementById("detailAddress"), 
@@ -229,7 +240,21 @@ async function compressImage(file, maxWidth = 1600, quality = 0.8) {
   });
 }
 
-function filteredItems(){ const cycle=getActiveCycle(); if(!cycle) return []; const q=els.search.value.trim().toLowerCase(); if(!q) return cycle.items; return cycle.items.filter(x => (x.code||"").toLowerCase().includes(q) || (x.address||"").toLowerCase().includes(q)); }
+// Szűrési logika módosítva a Készek elrejtésével
+function filteredItems(){ 
+  const cycle=getActiveCycle(); if(!cycle) return []; 
+  
+  let items = cycle.items;
+  
+  // Ha a "Készek elrejtése" be van kapcsolva
+  if (hideDoneItems) {
+    items = items.filter(x => !getRecord(cycle, x.code).done);
+  }
+
+  const q=els.search.value.trim().toLowerCase(); 
+  if(!q) return items; 
+  return items.filter(x => (x.code||"").toLowerCase().includes(q) || (x.address||"").toLowerCase().includes(q)); 
+}
 
 function renderMenu(){ 
   els.cycleSelect.innerHTML=""; 
@@ -276,7 +301,7 @@ function renderList(){
   if(!cycle){ els.list.innerHTML='<div class="small">Nincs ciklus.</div>'; return; } 
   
   const doneCount=cycle.items.filter(i => getRecord(cycle,i.code).done).length; 
-  els.listStats.textContent="Összes tétel: "+cycle.items.length+" • Kész: "+doneCount+" • Találat: "+items.length; 
+  els.listStats.textContent="Összes tétel: "+cycle.items.length+" • Kész: "+doneCount+" • Mutatva: "+items.length; 
   els.cyclePageTitle.textContent=cycle.name; 
   els.cyclePageInfo.textContent="Állapot: "+(cycle.status==="archived"?"Lezárt":"Aktív"); 
   
@@ -288,7 +313,7 @@ function renderList(){
     btn.onclick=()=>showDetailView(item.code); 
     els.list.appendChild(btn); 
   }); 
-  if(!items.length) els.list.innerHTML='<div class="small">Nincs találat.</div>'; 
+  if(!items.length) els.list.innerHTML='<div class="small">Ebben a nézetben nincs megjeleníthető találat.</div>'; 
 }
 
 async function renderDetail(){ 
@@ -345,6 +370,13 @@ els.installBtn.onclick = async ()=>{ if(!deferredPrompt) return; deferredPrompt.
 const ua = navigator.userAgent || ""; const isIOS = /iPhone|iPad|iPod/i.test(ua); const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone; if(isIOS && !isStandalone) els.iosHint.textContent="iPhone-on: Safari → Megosztás → Hozzáadás a Főképernyőhöz."; if("serviceWorker" in navigator){ navigator.serviceWorker.register("./sw.js").catch(()=>{}); }
 
 // Eseménykezelők
+els.toggleDoneBtn.onclick = () => {
+  hideDoneItems = !hideDoneItems;
+  els.toggleDoneBtn.innerHTML = hideDoneItems ? "👁️ Készek megjelenítése" : "✅ Készek elrejtése";
+  els.toggleDoneBtn.className = hideDoneItems ? "btn btn-amber btn-full" : "btn btn-secondary btn-full";
+  renderList();
+};
+
 els.createCycleBtn.onclick=()=>{ createCycle(els.newCycleName.value); els.newCycleName.value=""; };
 els.cycleSelect.onchange=()=>{ state.activeCycleId=els.cycleSelect.value || null; saveState(); renderMenu(); };
 els.archiveCycleBtn.onclick=()=>{ if(confirm("Biztosan lezárod az aktív ciklust?")) archiveActiveCycle(); };
@@ -379,6 +411,10 @@ els.cameraInput.onchange=async (e)=>{
     
     rec.photos.push({id, filename, createdAt:new Date().toISOString()}); saveState(); 
     await putPhotoRecord({id, cycleId:cycle.id, code:item.code, filename, createdAt:new Date().toISOString(), blob:compressedBlob}); 
+    
+    // Készre jelölés automatikusan (opcionális, most nem tettem be)
+    // rec.done = true; saveState();
+    
     await renderDetail(); 
   } catch(err) {
     alert("Hiba a kép feldolgozása közben.");
